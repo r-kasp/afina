@@ -81,12 +81,6 @@ bool SimpleLRU::Get(const std::string &key, std::string &value)
 		return false;
 	value = it->second.get().value;
 	MoveToHead(key);
-	/*
-	if (it->second.get().prev != nullptr)
-	{
-		DeleteFromList(key);
-		AddToHead(&it->second.get());
-	}*/
 	return true;
 }
 

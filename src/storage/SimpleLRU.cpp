@@ -12,11 +12,7 @@ bool SimpleLRU::Put(const std::string &key, const std::string &value)
 	auto it = _lru_index.find(key);	
 	if (it != _lru_index.end())
 	{
-		if (it->second.get().prev != nullptr)
-		{
-			DeleteFromList(key);
-			AddToHead(&(it->second.get()));
-		}
+		MoveToHead(key);
 		_cur_size -= it->second.get().value.size();
 		reserve_mem(value.size());
 		it->second.get().value = value;

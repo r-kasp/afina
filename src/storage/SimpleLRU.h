@@ -52,6 +52,8 @@ public:
     bool DeleteFromList(const std::string &key);
 
     bool DeleteTail();
+    
+    void reserve_mem(int delta);
 
 private:
     // LRU cache node
@@ -80,6 +82,9 @@ private:
 
     // Index of nodes from list above, allows fast random access to elements by lru_node#key
     std::map<std::reference_wrapper<const std::string>, std::reference_wrapper<lru_node>, std::less<std::string>> _lru_index;
+public:
+	void AddToHead(lru_node *buf);
+	void MoveToHead(const std::string &key);
 };
 
 } // namespace Backend

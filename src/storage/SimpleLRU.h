@@ -38,6 +38,7 @@ public:
 
     // Implements Afina::Storage interface
     bool PutIfAbsent(const std::string &key, const std::string &value) override;
+    bool _PutIfAbsent(const std::string &key, const std::string &value);
 
     // Implements Afina::Storage interface
     bool Set(const std::string &key, const std::string &value) override;
@@ -47,9 +48,6 @@ public:
 
     // Implements Afina::Storage interface
     bool Get(const std::string &key, std::string &value) override;
-    
-    // Delete the Node from List
-    bool DeleteFromList(const std::string &key);
 
     bool DeleteTail();
     
@@ -78,13 +76,14 @@ private:
     //
     // List owns all nodes
     std::unique_ptr<lru_node> _lru_head;
-    lru_node *_lru_tail;
+    lru_node *_lru_tail = nullptr;
 
     // Index of nodes from list above, allows fast random access to elements by lru_node#key
     std::map<std::reference_wrapper<const std::string>, std::reference_wrapper<lru_node>, std::less<std::string>> _lru_index;
 public:
+	// Delete the Node from List
 	void AddToHead(lru_node *buf);
-	void MoveToHead(const std::string &key);
+	void MoveToHead(lru_node *node);
 };
 
 } // namespace Backend

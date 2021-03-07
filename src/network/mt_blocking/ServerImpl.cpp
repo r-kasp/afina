@@ -81,11 +81,11 @@ void ServerImpl::Stop() {
 
 	std::unique_lock<std::mutex> _lock(_mtx);
     running.store(false);
-    shutdown(_server_socket, SHUT_RDWR);
     for (int socket : _clients_sockets)
     {
     	shutdown(socket, SHUT_RD);
     }
+    shutdown(_server_socket, SHUT_RDWR);
 }
 
 // See Server.h
@@ -93,10 +93,15 @@ void ServerImpl::Join() {
     assert(_thread.joinable());
     _thread.join();
     close(_server_socket);
+    std::unique_lock<std::mutex> _lock(_mtx);
+   	if (_clients_sockets.size() != 0)
+   	{
+   		_cond.wait(_lock);
+   	}
 }
 
 //сделать функцию которая обрабатывает клиента
-void ServerImpl::OneClickHandler(int client_socket) {
+void ServerImpl::OnClientHandler(int client_socket) {
 	
 	// - parser: parse state of the stream
     // - command_to_execute: last command parsed out of stream
@@ -256,7 +261,7 @@ void ServerImpl::OnRun() {
 				continue;
 			}
 			_clients_sockets.insert(client_socket);
-			std::thread th(&ServerImpl::OneClickHandler, this, client_socket);
+			std::thread th(&ServerImpl::OnClientHandler, this, client_socket);
 			th.detach();
 		}
     }

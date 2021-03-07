@@ -38,7 +38,7 @@ protected:
     /**
      * Method is running in the connection acceptor thread
      */
-    void OneClickHandler(int client_socket);
+    void OnClientHandler(int client_socket);
     void OnRun();
 
 private:

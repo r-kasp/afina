@@ -78,8 +78,7 @@ void ServerImpl::Start(uint16_t port, uint32_t n_accept, uint32_t n_workers) {
 
 // See Server.h
 void ServerImpl::Stop() {
-
-	std::unique_lock<std::mutex> _lock(_mtx);
+    std::unique_lock<std::mutex> _lock(_mtx);
     running.store(false);
     for (int socket : _clients_sockets)
     {
@@ -94,13 +93,13 @@ void ServerImpl::Join() {
     _thread.join();
     close(_server_socket);
     std::unique_lock<std::mutex> _lock(_mtx);
-   	if (_clients_sockets.size() != 0)
-   	{
-   		_cond.wait(_lock);
-   	}
+    if (_clients_sockets.size() != 0)
+    {
+       	_cond.wait(_lock);
+    }
 }
 
-//сделать функцию которая обрабатывает клиента
+
 void ServerImpl::OnClientHandler(int client_socket) {
 	
 	// - parser: parse state of the stream

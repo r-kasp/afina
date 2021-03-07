@@ -256,7 +256,7 @@ void ServerImpl::OnRun() {
 			std::unique_lock<std::mutex> _lock(_mtx);
 			if (_clients_sockets.size() == _limit)
 			{
-			  	close(client_socket);
+				close(client_socket);
 				continue;
 			}
 			_clients_sockets.insert(client_socket);

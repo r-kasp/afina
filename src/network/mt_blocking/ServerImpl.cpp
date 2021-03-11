@@ -90,14 +90,15 @@ void ServerImpl::Stop() {
 
 // See Server.h
 void ServerImpl::Join() {
-    assert(_thread.joinable());
-    _thread.join();
-    close(_server_socket);
-    std::unique_lock<std::mutex> _lock(_mtx);
-   	if (_clients_sockets.size() != 0)
-   	{
-   		_cond.wait(_lock);
-   	}
+    if (_thread.joinable())
+    {
+		_thread.join();
+		std::unique_lock<std::mutex> _lock(_mtx);
+	   	while (_clients_sockets.size() != 0)
+	   	{
+	   		_cond.wait(_lock);
+	   	}
+	}
 }
 
 //сделать функцию которая обрабатывает клиента
@@ -108,7 +109,7 @@ void ServerImpl::OnClientHandler(int client_socket) {
     // - arg_remains: how many bytes to read from stream to get command argument
     // - argument_for_command: buffer stores argument
     
-    std::size_t arg_remains;
+    std::size_t arg_remains = 0;
     Protocol::Parser parser;
     std::string argument_for_command;
     std::unique_ptr<Execute::Command> command_to_execute;
@@ -120,7 +121,7 @@ void ServerImpl::OnClientHandler(int client_socket) {
     
     try {
         int readed_bytes = -1;
-        char client_buffer[4096];
+        char client_buffer[4096] = "";
         while ((readed_bytes = read(client_socket, client_buffer, sizeof(client_buffer))) > 0) {
             _logger->debug("Got {} bytes from socket", readed_bytes);
 
@@ -255,7 +256,7 @@ void ServerImpl::OnRun() {
         //создать новый поток и обработать клиента
 		{
 			std::unique_lock<std::mutex> _lock(_mtx);
-			if (_clients_sockets.size() == _limit)
+			if (_clients_sockets.size() == _limit && running.load())
 			{
 			  	close(client_socket);
 				continue;
@@ -267,6 +268,7 @@ void ServerImpl::OnRun() {
     }
 
     // Cleanup on exit...
+    close(_server_socket);
     _logger->warn("Network stopped");
 }
 

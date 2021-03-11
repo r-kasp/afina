@@ -21,7 +21,7 @@ using namespace std;
 
 TEST(StorageTest, PutGet) {
     SimpleLRU storage;
-
+   
     EXPECT_TRUE(storage.Put("KEY1", "val1"));
     EXPECT_TRUE(storage.Put("KEY2", "val2"));
 
@@ -32,6 +32,7 @@ TEST(StorageTest, PutGet) {
     EXPECT_TRUE(storage.Get("KEY2", value));
     EXPECT_TRUE(value == "val2");
 }
+
 
 TEST(StorageTest, PutOverwrite) {
     SimpleLRU storage;
@@ -86,6 +87,7 @@ TEST(StorageTest, PutDeleteGet) {
     EXPECT_TRUE(storage.Put("KEY1", "val1"));
     EXPECT_TRUE(storage.Put("KEY2", "val2"));
 
+	
     EXPECT_TRUE(storage.Delete("KEY1"));
 
     std::string value;
@@ -166,12 +168,12 @@ TEST(StorageTest, BigTest) {
     }
 }
 
+
 TEST(StorageTest, MaxTest) {
     const size_t length = 20;
     SimpleLRU storage(2 * 1000 * length);
 
     std::stringstream ss;
-
     for (long i = 0; i < 1100; ++i) {
         auto key = pad_space("Key " + std::to_string(i), length);
         auto val = pad_space("Val " + std::to_string(i), length);
@@ -181,7 +183,6 @@ TEST(StorageTest, MaxTest) {
     for (long i = 100; i < 1100; ++i) {
         auto key = pad_space("Key " + std::to_string(i), length);
         auto val = pad_space("Val " + std::to_string(i), length);
-
         std::string res;
         EXPECT_TRUE(storage.Get(key, res));
 
@@ -194,4 +195,21 @@ TEST(StorageTest, MaxTest) {
         std::string res;
         EXPECT_FALSE(storage.Get(key, res));
     }
+}
+
+
+TEST(StorageTest, NeedMoveToHeadSetTest) {
+    SimpleLRU storage(16);
+	EXPECT_TRUE(storage.Put("KEY1", "VAL1"));
+	EXPECT_TRUE(storage.Put("KEY2", "VAL2"));
+    EXPECT_TRUE(storage.Set("KEY2", "AAAAAA"));
+    std::string str;
+    EXPECT_FALSE(storage.Get("KEY1", str));
+}
+
+
+TEST(StorageTest, CantSetTest) {
+    SimpleLRU storage(6);
+	EXPECT_TRUE(storage.Put("KEY", "VAL"));
+    EXPECT_FALSE(storage.Set("KEY", "AAAAAA"));
 }

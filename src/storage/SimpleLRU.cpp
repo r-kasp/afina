@@ -15,6 +15,7 @@ bool SimpleLRU::Put(const std::string &key, const std::string &value)
 		MoveToHead(&(it->second.get()));
 		_cur_size -= it->second.get().value.size();
 		reserve_mem(value.size());
+		_cur_size += value.size();
 		it->second.get().value = value;
 	} 
 	else
@@ -34,11 +35,12 @@ bool SimpleLRU::PutIfAbsent(const std::string &key, const std::string &value)
 	{
 		return false;
 	}
+	reserve_mem(key.size() + value.size());
+	_cur_size += key.size() + value.size();
 	lru_node *buf = new lru_node(key, value, nullptr);
 	std::reference_wrapper<lru_node> adress_buf = *buf;
 	std::reference_wrapper<const std::string> adress_key = buf->key;
 	AddToHead(buf);
-	reserve_mem(key.size() + value.size());
 	_lru_index.insert({adress_key, adress_buf});
 	return true;	
 }
@@ -48,11 +50,12 @@ bool SimpleLRU::_PutIfAbsent(const std::string &key, const std::string &value)
 {
 	if (key.size() + value.size() > _max_size)
 		return false;
+	reserve_mem(key.size() + value.size());
+	_cur_size += key.size() + value.size();
 	lru_node *buf = new lru_node(key, value, nullptr);
 	std::reference_wrapper<lru_node> adress_buf = *buf;
 	std::reference_wrapper<const std::string> adress_key = buf->key;
 	AddToHead(buf);
-	reserve_mem(key.size() + value.size());
 	_lru_index.insert({adress_key, adress_buf});
 	return true;	
 }
@@ -66,9 +69,10 @@ bool SimpleLRU::Set(const std::string &key, const std::string &value)
 	if (it == _lru_index.end())
 		return false;
 	_cur_size -= it->second.get().value.size();
-	reserve_mem(value.size());
-	it->second.get().value = value;
 	MoveToHead(&(it->second.get()));
+	reserve_mem(value.size());
+	_cur_size += value.size();
+	it->second.get().value = value;
 	return true;
 }
 
@@ -186,7 +190,6 @@ void SimpleLRU::reserve_mem(int delta)
 	{
 		DeleteTail();
 	}
-	_cur_size += delta;
 }
 
 } // namespace Backend

@@ -38,6 +38,8 @@ ServerImpl::~ServerImpl() {
 
 // See Server.h
 void ServerImpl::Start(uint16_t port, uint32_t n_accept, uint32_t n_workers) {
+	_limit = n_workers;	
+	
     _logger = pLogging->select("network");
     _logger->info("Start mt_blocking network service");
 

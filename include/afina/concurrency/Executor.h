@@ -63,15 +63,15 @@ class Executor {
     	if (state != State::kStopped)
     	{
     		if (cur_work == 0)
-				state = State::kStopped;
-			else
-    			state = State::kStopping;
-			empty_condition.notify_all();
-			while (state != State::kStopped)
-			{
-				stop_condition.wait(lock);
-			}
+			state = State::kStopped;
+		else
+			state = State::kStopping;
+		empty_condition.notify_all();
+		while (state != State::kStopped)
+		{
+			stop_condition.wait(lock);
 		}
+	}
     }
 
     /**

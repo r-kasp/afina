@@ -18,6 +18,7 @@ namespace Concurrency {
  * # Thread pool
  */
 class Executor {
+public:
     enum class State {
         // Threadpool is fully operational, tasks could be added and get executed
         kRun,
@@ -62,16 +63,16 @@ class Executor {
     	std::unique_lock<std::mutex> lock(mutex);
     	if (state != State::kStopped)
     	{
-    		if (cur_work == 0)
-			state = State::kStopped;
-		else
-			state = State::kStopping;
-		empty_condition.notify_all();
-		while (state != State::kStopped)
-		{
-			stop_condition.wait(lock);
+    		if (threads.size() == 0)
+				state = State::kStopped;
+			else
+    			state = State::kStopping;
+			empty_condition.notify_all();
+			while (state != State::kStopped)
+			{
+				stop_condition.wait(lock);
+			}
 		}
-	}
     }
 
     /**
@@ -96,7 +97,7 @@ class Executor {
         {
         	threads.push_back( std::thread([this] {return perform(this);} ) );
         	cur_threads++;
-	}
+		}
         
         tasks.push_back(exec);
         empty_condition.notify_one();
@@ -129,43 +130,47 @@ private:
     	{    	
     		auto time = std::chrono::steady_clock::now();
     		while (executor->tasks.empty())
-		{
-			auto wake_up = executor->empty_condition.wait_until(lock, time + std::chrono::milliseconds(executor->idle_time));
-			if (executor->state != Executor::State::kRun || 
-			(executor->threads.size() > executor->low_watermark && executor->tasks.empty() && wake_up == std::cv_status::timeout))
 			{
-				flag_time = true;
+				auto wake_up = executor->empty_condition.wait_until(lock, time + std::chrono::milliseconds(executor->idle_time));
+				if (executor->state != Executor::State::kRun || 
+				(executor->threads.size() > executor->low_watermark && executor->tasks.empty() && wake_up == std::cv_status::timeout))
+				{
+					flag_time = true;
+					break;
+				}
+			}		
+			if (flag_time)
 				break;
+				
+			auto task = executor->tasks.front();
+			executor->tasks.pop_front();
+			executor->cur_work++;
+			
+			lock.unlock();
+			
+			try
+			{
+				task();
 			}
-		}		
-		if (flag_time)
-			break;
-
-		auto task = executor->tasks.front();
-		executor->tasks.pop_front();
-		executor->cur_work++;
-
-		lock.unlock();
-
-		try
-		{
-			task();
-		}
-		catch (...)
-		{
-			std::cout << "Error" << std::endl;
-		}
-
-		lock.lock();
-		executor->cur_work--;
+			catch (const std::exception & err)
+			{
+				std::cout << err.what() << std::endl;
+			}
+			catch (...)
+			{
+				std::cout << "Error" << std::endl;
+			}
+			
+			lock.lock();
+			executor->cur_work--;
     	}
     	
     	executor->cur_threads--;
-	if (executor->cur_threads == 0 && executor->state != Executor::State::kRun)
-	{
-		executor->state = Executor::State::kStopped;
-		executor->stop_condition.notify_all();
-	}
+		if (executor->cur_threads == 0 && executor->state != Executor::State::kRun)
+		{
+			executor->state = Executor::State::kStopped;
+			executor->stop_condition.notify_all();
+		}
     }
 
     /**
